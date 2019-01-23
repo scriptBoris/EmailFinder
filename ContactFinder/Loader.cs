@@ -27,7 +27,7 @@ namespace ContactFinderLib
                     if (string.IsNullOrWhiteSpace(line) == true)
                         continue;
 
-                    Console.WriteLine(line);
+                    Console.WriteLine($"load: {line}");
                     Urls.Add(line);
                 }
                 file.Close();
@@ -41,6 +41,9 @@ namespace ContactFinderLib
 
         public void UploadResult(List<string> emails)
         {
+            if (emails == null)
+                return;
+
             foreach (var item in emails)
                Emails.Add(item);
         }

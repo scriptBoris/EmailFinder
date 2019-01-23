@@ -45,8 +45,18 @@ namespace ContactFinderLib
         public async Task<List<string>> GetResult()
         {
             var cl = new HttpClient();
-            var responseHtml = await cl.GetAsync(url);
-            string response = await responseHtml.Content.ReadAsStringAsync();
+            string response = "";
+
+            try
+            {
+                var responseHtml = await cl.GetAsync(url);
+                response = await responseHtml.Content.ReadAsStringAsync();
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Fail execute GET request: {url}");
+                return null;
+            }
 
             //string response = "<a href=\"http://dota2.ru/contact-us\"></a>";
             //string response = "<a href=\"https://rusdefense.ru/contact-us/\"><i class=\"fa fa-phone\"></i></a> <span class=\"hidden-xs hidden-sm hidden-md";
@@ -72,7 +82,7 @@ namespace ContactFinderLib
                         //list.Add(url);
                         //return list;
 
-                        responseHtml = await cl.GetAsync(url);
+                        var responseHtml = await cl.GetAsync(url);
                         response = await responseHtml.Content.ReadAsStringAsync();
 
                         foreach (var em in GetEmails(response))

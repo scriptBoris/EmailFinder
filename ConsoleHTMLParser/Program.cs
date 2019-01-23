@@ -11,7 +11,7 @@ namespace ConsoleHTMLParser
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Load internal data...");
+            Console.WriteLine("EmailFinder is running...\n");
             var loader = new Loader();
 
             if (loader.Urls == null || loader.Urls.Count == 0)
@@ -28,13 +28,13 @@ namespace ConsoleHTMLParser
 
         private static async void Run(Loader loader)
         {
-            Console.WriteLine("Find...\n");
+            Console.WriteLine("\nFind...\n");
             foreach (var item in loader.Urls)
             {
                 var conFinder = new ContactFinder(item);
                 loader.UploadResult(await conFinder.GetResult());
             }
-            Console.WriteLine("End...");
+            Console.WriteLine("\nEnd...");
         }
     }
 }
