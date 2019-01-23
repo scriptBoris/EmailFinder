@@ -23,6 +23,10 @@ namespace ContactFinderLib
                 string line;
                 while ((line = file.ReadLine()) != null)
                 {
+                    // Если строка пустая, то не добавлять её в список URLs
+                    if (string.IsNullOrWhiteSpace(line) == true)
+                        continue;
+
                     Console.WriteLine(line);
                     Urls.Add(line);
                 }

@@ -14,7 +14,7 @@ namespace ConsoleHTMLParser
             Console.WriteLine("Load internal data...");
             var loader = new Loader();
 
-            if (loader.Urls == null)
+            if (loader.Urls == null || loader.Urls.Count == 0)
             {
                 Console.WriteLine("Not found internal data.");
                 Console.ReadLine();
