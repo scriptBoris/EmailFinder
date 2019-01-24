@@ -27,6 +27,9 @@ namespace ContactFinderLib
                     if (string.IsNullOrWhiteSpace(line) == true)
                         continue;
 
+                    // Чистка URL От пробелов
+                    line = line.Replace(" ","");
+
                     Console.WriteLine($"загрузка: {line}");
                     Results.Add(new FoundResult
                     {
