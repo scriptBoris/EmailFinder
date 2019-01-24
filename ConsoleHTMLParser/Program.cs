@@ -15,7 +15,7 @@ namespace ConsoleHTMLParser
             Console.WriteLine("Программа запущена...\n");
             var loader = new Loader();
 
-            if (loader.Urls == null || loader.Urls.Count == 0)
+            if (loader.Results == null || loader.Results.Count == 0)
             {
                 Console.WriteLine("Не удалось получить список адресов, на которых надо искать почту.");
                 Console.ReadLine();
@@ -29,23 +29,24 @@ namespace ConsoleHTMLParser
 
         private static async void Run(Loader loader)
         {
-            Console.WriteLine("\nПоиск...\n\n");
-            foreach (var item in loader.Urls)
+            Console.WriteLine("\nПоиск...");
+            foreach (var item in loader.Results)
             {
                 var conFinder = new ContactFinder(item);
-                loader.LoadResult(await conFinder.GetResult());
+                await conFinder.GetResult();
             }
 
-            if (loader.Emails.Count == 0)
+            int count = loader.GetCountResult();
+            if (count == 0)
             {
                 Console.WriteLine("Поиск не дал результатов.");
                 return;
             }
 
-            string filePath = Path.Combine(Environment.CurrentDirectory, "EmailFinderResult " + DateTime.Now.ToString("yyyy.M.dd HH.mm") + ".txt" );
+            string filePath = Path.Combine(Environment.CurrentDirectory, "EmailFinderResult " + DateTime.Now.ToString("yyyy.M.dd HH.mm") + ".slk" );
             Console.WriteLine($"\n\nПоиск завершен.\nВыгружаю данные в файл: \"{Path.GetFileName(filePath)}\"\n");
             await loader.UploadResult(filePath);
-            Console.WriteLine($"Выгрузка завершена.");
+            Console.WriteLine($"Выгрузка завершена. Найденно данных: {count}");
         }
     }
 }
