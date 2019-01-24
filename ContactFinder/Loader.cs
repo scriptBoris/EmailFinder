@@ -27,7 +27,7 @@ namespace ContactFinderLib
                     if (string.IsNullOrWhiteSpace(line) == true)
                         continue;
 
-                    Console.WriteLine($"load: {line}");
+                    Console.WriteLine($"загрузка: {line}");
                     Urls.Add(line);
                 }
                 file.Close();
@@ -35,17 +35,28 @@ namespace ContactFinderLib
             }
             else
             {
-                Console.WriteLine($"Not found file: {config}");
+                Console.WriteLine($"Не удалось найти файл: {config}");
             }
         }
 
-        public void UploadResult(List<string> emails)
+        public void LoadResult(List<string> emails)
         {
             if (emails == null)
                 return;
 
             foreach (var item in emails)
                Emails.Add(item);
+        }
+
+        public async Task UploadResult(string filePath)
+        {
+            using(var sw = File.CreateText(filePath))
+            {
+                foreach (var s in Emails)
+                {
+                    await sw.WriteLineAsync(s);
+                }
+            }
         }
     }
 }
