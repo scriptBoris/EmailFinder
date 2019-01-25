@@ -22,9 +22,19 @@ namespace ConsoleHTMLParser
                 return;
             }
 
-            Run(loader);
+            try
+            {
+                Run(loader);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Произошла ошибка в работе программы. Причина:\n{ex.Message}\n{ex.InnerException?.Message}");
+            }
 
-            Console.ReadLine();
+            while (true)
+            {
+                Console.ReadLine();
+            }
         }
 
         private static async void Run(Loader loader)

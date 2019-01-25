@@ -75,6 +75,7 @@ namespace ContactFinderLib
                 result.Add(item);
             }
 
+
             return result;
         }
 
@@ -105,8 +106,8 @@ namespace ContactFinderLib
             if (dataResult.Emails.Count == 0)
             {
                 //const string refPattern = "<a.*?href=\"(.*?(contact|about|kontakti|kontakty))\".*?>";
-                const string refPattern = "<a.*?href=\"(.*?(contact|about|kontakti|kontakty))\".*?>";
-                var reg = new Regex(refPattern);
+                const string refPattern = "<a.*?href\\s*=\\s*[\"\'].*?(about|contact|kontakti|kontakty|kompanii).*?([^\"\'>]+)[\"\']*>";
+                var reg = new Regex(refPattern, RegexOptions.IgnoreCase);
                 var mat = reg.Matches(response);
 
                 if (mat.Count > 0)
@@ -157,20 +158,22 @@ namespace ContactFinderLib
 
             // Remove duplicate strings
             var list = dataResult.Emails;
-            while (true)
+            for(int i = 0; i <= list.Count -1; i++)
             {
-                var email = list.First();
+                var email = list[i];
 
                 var match = list.FindAll(x => email.Email.Equals(x.Email, StringComparison.OrdinalIgnoreCase));
                 if (match.Count > 1)
-                    dataResult.Emails.Remove(email);
-                else
-                    break;
+                {
+                    list.RemoveAt(i);
+                    i = 0;
+                }
             }
 
-            foreach(var item in dataResult.Emails)
+            // Output on console
+            foreach(var item in list)
             {
-                Console.WriteLine($"{url}: {item.Email}");
+                Console.WriteLine($"{url}: найден {item.Email}");
             }
 
             dataResult.Status = Status.OK;
