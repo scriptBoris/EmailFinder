@@ -22,14 +22,7 @@ namespace ConsoleHTMLParser
                 return;
             }
 
-            try
-            {
-                Run(loader);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Произошла ошибка в работе программы. Причина:\n{ex.Message}\n{ex.InnerException?.Message}");
-            }
+            Run(loader);
 
             while (true)
             {
@@ -49,7 +42,7 @@ namespace ConsoleHTMLParser
             int count = loader.GetCountResult();
             if (count == 0)
             {
-                Console.WriteLine("Поиск не дал результатов.");
+                Console.WriteLine("\n\nПоиск не дал результатов.");
                 return;
             }
 

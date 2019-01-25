@@ -27,13 +27,23 @@ namespace ContactFinderLib
                     if (string.IsNullOrWhiteSpace(line) == true)
                         continue;
 
-                    // Чистка URL От пробелов
-                    line = line.Replace(" ","");
+                    var split = line.Split(';');
+                    if (split.Length < 2)
+                    {
+                        ConsoleEx.WriteError($"{line}:","ошибка загрузки.");
+                        continue;
+                    }
 
-                    Console.WriteLine($"загрузка: {line}");
+                    string source = split[0];
+                    // Чистка URL От пробелов
+                    string url = split[1].Replace(" ","");
+
+
+                    Console.WriteLine($"загрузка: {source} - {url}");
                     Results.Add(new FoundResult
                     {
-                        Url = line,
+                        Source = source,
+                        Url = url,
                     });
                 }
                 file.Close();
@@ -68,10 +78,11 @@ namespace ContactFinderLib
             using (var sw = File.CreateText(filePath))
             {
                 await sw.WriteLineAsync("ID;P");
-                await sw.WriteLineAsync($"C;Y1;X1;K\"#\"");
-                await sw.WriteLineAsync($"C;Y1;X2;K\"Target\"");
-                await sw.WriteLineAsync($"C;Y1;X3;K\"Result\"");
-                await sw.WriteLineAsync($"C;Y1;X4;K\"Source\"");
+                await sw.WriteLineAsync($"C;Y1;X1;K\"#\""); // номер
+                await sw.WriteLineAsync($"C;Y1;X2;K\"Company\""); // название комании
+                await sw.WriteLineAsync($"C;Y1;X3;K\"Target\""); // сайт
+                await sw.WriteLineAsync($"C;Y1;X4;K\"Result\""); // найденные Емейлы
+                await sw.WriteLineAsync($"C;Y1;X5;K\"Source\""); // адрес HTML страницы на которой удалось найти
                 foreach (var result in Results)
                 {
                     if (result.Status == Status.OK)
@@ -79,7 +90,7 @@ namespace ContactFinderLib
                         foreach (var email in result.Emails)
                         {
                             counter++;
-                            await Write(sw, counter, result.Url, email);
+                            await Write(sw, counter, result, email);
                         }
                     }
                     else
@@ -87,15 +98,15 @@ namespace ContactFinderLib
                         counter++;
                         if (result.Status == Status.BadUrl)
                         {
-                            await Write(sw, counter, result.Url, "bad url");
+                            await Write(sw, counter, result, "BAD URL");
                         }
                         else if (result.Status == Status.NotConnect)
                         {
-                            await Write(sw, counter, result.Url, "not connect");
+                            await Write(sw, counter, result, "NOT CONNECT");
                         }
                         else if (result.Status == Status.NotEmails)
                         {
-                            await Write(sw, counter, result.Url, "not found emails");
+                            await Write(sw, counter, result, "NO EMAIL");
                         }
                     }
                 }
@@ -103,19 +114,21 @@ namespace ContactFinderLib
             }
         }
 
-        private async Task Write(StreamWriter sw, int counter, string url, string value)
+        private async Task Write(StreamWriter sw, int counter, FoundResult found, string value)
         {
             await sw.WriteLineAsync($"C;Y{counter};X1;K\"{counter-1})\"");
-            await sw.WriteLineAsync($"C;Y{counter};X2;K\"{url}\"");
-            await sw.WriteLineAsync($"C;Y{counter};X3;K\"{value}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X2;K\"{found.Source}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X3;K\"{found.Url}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X4;K\"{value}\"");
         }
 
-        private async Task Write(StreamWriter sw, int counter, string url, EmailResult mail)
+        private async Task Write(StreamWriter sw, int counter, FoundResult found, EmailResult mail)
         {
             await sw.WriteLineAsync($"C;Y{counter};X1;K\"{counter - 1})\"");
-            await sw.WriteLineAsync($"C;Y{counter};X2;K\"{url}\"");
-            await sw.WriteLineAsync($"C;Y{counter};X3;K\"{mail.Email}\"");
-            await sw.WriteLineAsync($"C;Y{counter};X4;K\"{mail.Source}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X2;K\"{found.Source}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X3;K\"{found.Url}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X4;K\"{mail.Email}\"");
+            await sw.WriteLineAsync($"C;Y{counter};X5;K\"{mail.GotSource}\"");
         }
     }
 }

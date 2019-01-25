@@ -50,7 +50,7 @@ namespace ContactFinderLib
                 tempList.Add(new EmailResult
                 {
                     Email = item.ToString(),
-                    Source = addresHTML,
+                    GotSource = addresHTML,
                     Method = Method.ByTag,
                 });
 
@@ -61,7 +61,7 @@ namespace ContactFinderLib
                 tempList.Add(new EmailResult
                 {
                     Email = item.ToString(),
-                    Source = addresHTML,
+                    GotSource = addresHTML,
                     Method = Method.ByParse,
                 });
 
@@ -132,18 +132,26 @@ namespace ContactFinderLib
                             var split = urlMat.Value.Split('"');
                             urlImmersive = split[0];
                             urlImmersive = Url.Combine(url, urlImmersive);
-                            Console.WriteLine($"{urlImmersive} погружение");
                         }
 
                         //list.Add(url);
                         //return list;
 
-                        var responseHtml = await cl.GetAsync(urlImmersive);
-                        response = await responseHtml.Content.ReadAsStringAsync();
-                        var listImmersive = GetEmails(response, urlImmersive);
+                        try
+                        {
+                            Console.WriteLine($"{urlImmersive} погружение");
+                            var responseHtml = await cl.GetAsync(urlImmersive);
+                            response = await responseHtml.Content.ReadAsStringAsync();
+                            Console.WriteLine($"{urlImmersive}: парсинг HTML");
+                            var listImmersive = GetEmails(response, urlImmersive);
 
-                        foreach (var em in listImmersive)
-                            dataResult.Emails.Add(em);
+                            foreach (var em in listImmersive)
+                                dataResult.Emails.Add(em);
+                        }
+                        catch (Exception ex)
+                        {
+                            ConsoleEx.WriteError($"{urlImmersive}:", $"ошибка. Причина - {ex.Message}");
+                        }
                     }
                 }
             }
@@ -173,7 +181,7 @@ namespace ContactFinderLib
             // Output on console
             foreach(var item in list)
             {
-                Console.WriteLine($"{url}: найден {item.Email}");
+                ConsoleEx.WriteEmail($"{url}: найден", $"{item.Email}");
             }
 
             dataResult.Status = Status.OK;
