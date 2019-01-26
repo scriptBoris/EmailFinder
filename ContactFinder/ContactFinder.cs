@@ -1,6 +1,8 @@
 ﻿using EmailFinderLib;
+using Flurl;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -13,6 +15,7 @@ namespace ContactFinderLib
     {
         private FoundResult dataResult;
 
+        // Parse patern mailto:
         private const string emailPattern =
                @"([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})";
 
@@ -24,6 +27,13 @@ namespace ContactFinderLib
                     @"(?<withoutsubject>" + @"(?<=mailto\:)" + emailPattern + @"(?="")" + ")" +
                 ")";
 
+        // Parse patern email
+        const string patternEmailParse =
+           @"(([\w-]+\.)+[\w-]+|([a-zA-Z]{1}|[\w-]{2,}))@"
+           + @"((([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\.([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\."
+             + @"([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])\.([0-1]?[0-9]{1,2}|25[0-5]|2[0-4][0-9])){1}|"
+           + @"([a-zA-Z]+[\w-]+\.)+[a-zA-Z]{2,4})";
+
         public ContactFinder(FoundResult emailResult)
         {
             dataResult = emailResult;
@@ -31,19 +41,41 @@ namespace ContactFinderLib
 
         private List<EmailResult> GetEmails(string targetHTML, string addresHTML)
         {
-            var result = new List<EmailResult>();
+            var tempList = new List<EmailResult>();
+
+            // parse mailto
             var regex = new Regex(pattern);
             var matches = regex.Matches(targetHTML);
+            foreach (var item in matches)
+                tempList.Add(new EmailResult
+                {
+                    Email = item.ToString(),
+                    GotSource = addresHTML,
+                    Method = Method.ByTag,
+                });
 
-            if (matches.Count > 0)
+            // parse email
+            regex = new Regex(patternEmailParse);
+            matches = regex.Matches(targetHTML);
+            foreach (var item in matches)
+                tempList.Add(new EmailResult
+                {
+                    Email = item.ToString(),
+                    GotSource = addresHTML,
+                    Method = Method.ByParse,
+                });
+
+            // Filter
+            var result = new List<EmailResult>();
+            foreach (var item in tempList)
             {
-                foreach (var item in matches)
-                    result.Add(new EmailResult
-                    {
-                        Email = item.ToString(),
-                        Source = addresHTML
-                    });
+                if (item.Email.Equals("Rating@Mail.ru", StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(item.Email, @"\p{IsCyrillic}"))
+                    continue;
+
+                result.Add(item);
             }
+
+
             return result;
         }
 
@@ -67,35 +99,59 @@ namespace ContactFinderLib
                 return dataResult;
             }
 
-            //string response = "<a href=\"http://dota2.ru/contact-us\"></a>";
-            //string response = "<a href=\"https://rusdefense.ru/contact-us/\"><i class=\"fa fa-phone\"></i></a> <span class=\"hidden-xs hidden-sm hidden-md";
+            // test
+            //response = "<nobr><a href=\"/about/index.php\"style=\"text-decoration:none;\">";
             Console.WriteLine($"{url}: парсинг HTML");
             dataResult.Emails = GetEmails(response, url);
             if (dataResult.Emails.Count == 0)
             {
-                const string refPattern = "<a.*?href=\"(.*?(.*(contact|about|kontakti|kontakty).*))\".*?>";
-                var reg = new Regex(refPattern);
+                //const string refPattern = "<a.*?href=\"(.*?(contact|about|kontakti|kontakty))\".*?>";
+                const string refPattern = "<a.*?href\\s*=\\s*[\"\'].*?(about|contact|kontakti|kontakty|kompanii).*?([^\"\'>]+)[\"\']*>";
+                var reg = new Regex(refPattern, RegexOptions.IgnoreCase);
                 var mat = reg.Matches(response);
 
                 if (mat.Count > 0)
                 {
                     foreach (var item in mat)
                     {
+                        string urlImmersive;
                         var urlReg = new Regex("http.*");
                         var urlMat = urlReg.Match(item.ToString());
-                        if (urlMat.Success == false)
-                            continue;
-                        var split = urlMat.Value.Split('"');
-                        string urlImmersive = split[0];
+                        if (urlMat.Success == true)
+                        {
+                            var split = urlMat.Value.Split('"');
+                            urlImmersive = split[0];
+                        }
+                        else
+                        {
+                            urlReg = new Regex("/{1}.*");
+                            urlMat = urlReg.Match(item.ToString());
+                            if (urlMat.Success == false)
+                                continue;
+
+                            var split = urlMat.Value.Split('"');
+                            urlImmersive = split[0];
+                            urlImmersive = Url.Combine(url, urlImmersive);
+                        }
 
                         //list.Add(url);
                         //return list;
 
-                        var responseHtml = await cl.GetAsync(urlImmersive);
-                        response = await responseHtml.Content.ReadAsStringAsync();
+                        try
+                        {
+                            Console.WriteLine($"{urlImmersive} погружение");
+                            var responseHtml = await cl.GetAsync(urlImmersive);
+                            response = await responseHtml.Content.ReadAsStringAsync();
+                            Console.WriteLine($"{urlImmersive}: парсинг HTML");
+                            var listImmersive = GetEmails(response, urlImmersive);
 
-                        foreach (var em in GetEmails(response, urlImmersive))
-                            dataResult.Emails.Add(em);
+                            foreach (var em in listImmersive)
+                                dataResult.Emails.Add(em);
+                        }
+                        catch (Exception ex)
+                        {
+                            ConsoleEx.WriteError($"{urlImmersive}:", $"ошибка. Причина - {ex.Message}");
+                        }
                     }
                 }
             }
@@ -110,19 +166,22 @@ namespace ContactFinderLib
 
             // Remove duplicate strings
             var list = dataResult.Emails;
-            while (true)
+            for(int i = 0; i <= list.Count -1; i++)
             {
-                var email = list.First();
+                var email = list[i];
+
                 var match = list.FindAll(x => email.Email.Equals(x.Email, StringComparison.OrdinalIgnoreCase));
                 if (match.Count > 1)
-                    dataResult.Emails.Remove(email);
-                else
-                    break;
+                {
+                    list.RemoveAt(i);
+                    i = 0;
+                }
             }
 
-            foreach(var item in dataResult.Emails)
+            // Output on console
+            foreach(var item in list)
             {
-                Console.WriteLine($"{url}: {item.Email}");
+                ConsoleEx.WriteEmail($"{url}: найден", $"{item.Email}");
             }
 
             dataResult.Status = Status.OK;

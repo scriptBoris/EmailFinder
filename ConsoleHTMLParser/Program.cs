@@ -24,7 +24,10 @@ namespace ConsoleHTMLParser
 
             Run(loader);
 
-            Console.ReadLine();
+            while (true)
+            {
+                Console.ReadLine();
+            }
         }
 
         private static async void Run(Loader loader)
@@ -39,7 +42,7 @@ namespace ConsoleHTMLParser
             int count = loader.GetCountResult();
             if (count == 0)
             {
-                Console.WriteLine("Поиск не дал результатов.");
+                Console.WriteLine("\n\nПоиск не дал результатов.");
                 return;
             }
 
