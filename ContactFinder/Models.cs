@@ -17,8 +17,6 @@ namespace EmailFinderLib
     {
         public string Email { get; set; }
         public string Source { get; set; }
-        public Method Method { get; set; }
-        public int ImmersionCount { get; set; }
     }
 
     public enum Status
@@ -27,11 +25,5 @@ namespace EmailFinderLib
         BadUrl,
         NotConnect,
         NotEmails,
-    }
-
-    public enum Method
-    {
-        ByTag,
-        ByParse
     }
 }
